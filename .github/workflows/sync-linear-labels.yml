@@ -1,0 +1,26 @@
+name: Sync repo labels to Linear
+# Periodically keeps Linear's repo labels up-to-date for easy selection.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Runs nightly at 02:00 UTC
+    - cron: "0 2 * * *"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync org repos to Linear labels
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PAT }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          LINEAR_TEAM_ID: ${{ secrets.LINEAR_TEAM_ID }}
+          LABEL_PREFIX: "🐙 "
+          LINEAR_GROUP: repo
+        run: bash scripts/sync-linear-labels.sh

@@ -1,0 +1,25 @@
+name: Transfer issue to repo
+# When a new issue comes in, routes it to the correct repo.
+
+on:
+  issues:
+    types: labeled
+
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find routing label and transfer
+        env:
+          GH_TOKEN: ${{ secrets.TRANSFER_PAT }}
+          LABEL_PREFIX: "🐙 "
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_LABELS: ${{ toJson(github.event.issue.labels) }}
+        run: bash scripts/transfer-issue.sh
