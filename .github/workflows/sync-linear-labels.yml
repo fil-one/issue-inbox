@@ -12,15 +12,29 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      GH_TOKEN: ${{ secrets.SYNC_PAT || github.token }}
+      LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+      LINEAR_TEAM_ID: ${{ secrets.LINEAR_TEAM_ID }}
+      LABEL_PREFIX: "🐙 "
+      LINEAR_GROUP: repo
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check required Linear secrets
+        run: |
+          missing=()
+          [ -z "$LINEAR_API_KEY" ] && missing+=("LINEAR_API_KEY")
+          [ -z "$LINEAR_TEAM_ID" ] && missing+=("LINEAR_TEAM_ID")
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::warning::Skipping sync because required secrets are missing: ${missing[*]}"
+            echo "SYNC_ENABLED=false" >> "$GITHUB_ENV"
+          else
+            echo "SYNC_ENABLED=true" >> "$GITHUB_ENV"
+          fi
+
       - name: Sync org repos to Linear labels
-        env:
-          GH_TOKEN: ${{ secrets.SYNC_PAT }}
-          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
-          LINEAR_TEAM_ID: ${{ secrets.LINEAR_TEAM_ID }}
-          LABEL_PREFIX: "🐙 "
-          LINEAR_GROUP: repo
+        if: env.SYNC_ENABLED == 'true'
         run: bash scripts/sync-linear-labels.sh
